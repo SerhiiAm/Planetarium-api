@@ -2,6 +2,7 @@ services:
   app:
     build:
       context: .
+    image: serhiiambartsumov/planetarium:${TAG:-latest}
     env_file:
       - .env
     ports:
