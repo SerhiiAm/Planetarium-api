@@ -171,8 +171,8 @@ class Reservation(models.Model):
 
 
 class Ticket(models.Model):
-    row = models.IntegerField()
-    seat_in_row = models.IntegerField()
+    row = models.PositiveIntegerField()
+    seat_in_row = models.PositiveIntegerField()
     show_session = models.ForeignKey(
         ShowSession,
         on_delete=models.CASCADE,
