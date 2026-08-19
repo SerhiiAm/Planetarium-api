@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
+from planetarium_service import settings
 
 
 class ShowTheme(models.Model):
@@ -51,7 +52,8 @@ class PlanetariumDome(models.Model):
     ])
     seats_in_row = models.IntegerField(validators=[
         MinValueValidator(7),
-        MaxValueValidator(15)])
+        MaxValueValidator(15)
+    ])
 
     @property
     def capacity(self) -> int:
@@ -126,7 +128,7 @@ class ShowSession(models.Model):
         current_end_with_break = current_start + show_duration + break_duration
         other_sessions = ShowSession.objects.filter(
             planetarium_dome=self.planetarium_dome
-        )
+        ).select_related("astronomy_show")
 
         if self.pk:
             other_sessions = other_sessions.exclude(pk=self.pk)
@@ -151,3 +153,85 @@ class ShowSession(models.Model):
 
     def __str__(self):
         return f"{self.astronomy_show.title} - {self.show_time.strftime('%Y-%m-%d %H:%M')}"
+
+
+class Reservation(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reservations"
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Reservation {self.id} at {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class Ticket(models.Model):
+    row = models.IntegerField()
+    seat_in_row = models.IntegerField()
+    show_session = models.ForeignKey(
+        ShowSession,
+        on_delete=models.CASCADE,
+        related_name="tickets")
+
+    reservation = models.ForeignKey(
+        Reservation,
+        on_delete=models.CASCADE,
+        related_name="tickets")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["show_session", "row", "seat_in_row"],
+                name="unique_ticket_show_session_row_seat",
+            )
+        ]
+        ordering = ["show_session", "row", "seat_in_row"]
+
+    def __str__(self):
+        if not hasattr(self, "show_session") or self.show_session is None:
+            return f"Ticket (Row: {self.row}, Seat: {self.seat_in_row})"
+        return (
+            f"{self.show_session.astronomy_show.title} "
+            f"(Row: {self.row}, Seat: {self.seat_in_row})"
+        )
+
+    @staticmethod
+    def validate_ticket(
+            row: int,
+            seat_in_row: int,
+            planetarium_dome,
+            error_to_raise
+    ):
+        errors = {}
+
+        if row is not None and not (1 <= row <= planetarium_dome.rows):
+            errors["row"] = f"Row number must be in range [1, {planetarium_dome.rows}], not {row}."
+
+        if seat_in_row is not None and not (1 <= seat_in_row <= planetarium_dome.seats_in_row):
+            errors[
+                "seat_in_row"] = f"Seat number must be in range [1, {planetarium_dome.seats_in_row}], not {seat_in_row}."
+
+        if errors:
+            raise error_to_raise(errors)
+
+    def clean(self):
+        super().clean()
+
+        if not self.show_session or not hasattr(self.show_session, "planetarium_dome"):
+            return
+
+        Ticket.validate_ticket(
+            row=self.row,
+            seat_in_row=self.seat_in_row,
+            planetarium_dome=self.show_session.planetarium_dome,
+            error_to_raise=ValidationError,
+        )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
