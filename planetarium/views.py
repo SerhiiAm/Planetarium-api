@@ -1,3 +1,9 @@
-from django.shortcuts import render
+from rest_framework.viewsets import ModelViewSet
 
-# Create your views here.
+from planetarium.models import ShowTheme
+from planetarium.serializers import ShowThemeSerializer
+
+
+class ShowThemeViewSet(ModelViewSet):
+    queryset = ShowTheme.objects.all()
+    serializer_class = ShowThemeSerializer
