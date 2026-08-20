@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
+from decimal import Decimal
 from planetarium_service import settings
 
 
@@ -102,9 +103,16 @@ class ShowSession(models.Model):
         related_name="sessions")
     show_time = models.DateTimeField()
 
+    price = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=Decimal("10.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
+    )
+
     class Meta:
         verbose_name_plural = "show sessions"
-        ordering = ["show_time"]
+        ordering = ["show_time", "price"]
         constraints = [
             models.UniqueConstraint(
                 fields=["planetarium_dome", "show_time"],
@@ -152,7 +160,7 @@ class ShowSession(models.Model):
         return super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.astronomy_show.title} - {self.show_time.strftime('%Y-%m-%d %H:%M')}"
+        return f"{self.astronomy_show.title} - {self.show_time.strftime('%Y-%m-%d %H:%M')} (${self.price})"
 
 
 class Reservation(models.Model):
