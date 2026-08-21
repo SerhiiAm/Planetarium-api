@@ -17,7 +17,7 @@ class ShowTheme(models.Model):
         ordering = ["name"]
 
     def __str__(self):
-        return f"{self.id} -{self.name}"
+        return f"{self.id} - {self.name}"
 
 
 def astronomy_show_image_path(instance: "AstronomyShow", filename: str) -> Path:
