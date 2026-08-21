@@ -1,6 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
-from planetarium.models import ShowTheme, AstronomyShow
+from planetarium.models import ShowTheme, AstronomyShow, PlanetariumDome
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from planetarium.serializers import (
@@ -10,6 +10,7 @@ from planetarium.serializers import (
     AstronomyShowSerializer,
     ShowThemeDetailSerializer,
     ShowThemeSerializer,
+    PlanetariumDomeSerializer
 )
 
 
@@ -74,3 +75,8 @@ class AstronomyShowViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PlanetariumViewSet(ModelViewSet):
+    queryset = PlanetariumDome.objects.all().order_by("id")
+    serializer_class = PlanetariumDomeSerializer

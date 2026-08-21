@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from planetarium.models import ShowTheme, AstronomyShow
+from planetarium.models import ShowTheme, AstronomyShow, PlanetariumDome
 
 
 class ShowThemeSerializer(serializers.ModelSerializer):
@@ -56,3 +56,17 @@ class ShowThemeDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShowTheme
         fields = ("id", "name", "astronomy_shows")
+
+
+class PlanetariumDomeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlanetariumDome
+        fields = (
+            "id",
+            "name",
+            "rows",
+            "seats_in_row",
+            "capacity",
+            "dome_size",
+        )
+        read_only_fields = ("id", "capacity", "dome_size")
