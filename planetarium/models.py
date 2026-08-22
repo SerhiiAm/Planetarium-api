@@ -7,6 +7,8 @@ from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 from planetarium_service import settings
+from django.db.models import DateTimeField, DurationField, ExpressionWrapper, F
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 
 class ShowTheme(models.Model):
@@ -134,29 +136,41 @@ class ShowSession(models.Model):
         show_duration = timedelta(minutes=self.astronomy_show.duration)
         current_start = self.show_time
         current_end_with_break = current_start + show_duration + break_duration
-        other_sessions = ShowSession.objects.filter(
+
+        overlapping_sessions = ShowSession.objects.filter(
             planetarium_dome=self.planetarium_dome
+        ).annotate(
+            show_duration_interval=ExpressionWrapper(
+                F("astronomy_show__duration") * timedelta(minutes=1),
+                output_field=DurationField()
+            ),
+            calculated_end_with_break=ExpressionWrapper(
+                F("show_time") + F("show_duration_interval") + break_duration,
+                output_field=DateTimeField()
+            )
+        ).filter(
+            show_time__lt=current_end_with_break,
+            calculated_end_with_break__gt=current_start
         ).select_related("astronomy_show")
 
         if self.pk:
-            other_sessions = other_sessions.exclude(pk=self.pk)
+            overlapping_sessions = overlapping_sessions.exclude(pk=self.pk)
 
-        for session in other_sessions:
-            existing_start = session.show_time
-            existing_duration = timedelta(minutes=session.astronomy_show.duration)
-            existing_end_with_break = existing_start + existing_duration + break_duration
-            if current_start < existing_end_with_break and current_end_with_break > existing_start:
-                raise ValidationError({
-                    "show_time": (
-                        f"Dome '{self.planetarium_dome.name}' is occupied. "
-                        f"Session '{session.astronomy_show.title}' runs from "
-                        f"{existing_start.strftime('%H:%M')} to {existing_end_with_break.strftime('%H:%M')} "
-                        f"(including a 30-minute break)."
-                    )
-                })
+        conflicting_session = overlapping_sessions.first()
+        if conflicting_session:
+            existing_start = conflicting_session.show_time
+            existing_end_with_break = getattr(conflicting_session, "calculated_end_with_break")
+            raise DjangoValidationError({
+                "show_time": (
+                    f"Dome '{self.planetarium_dome.name}' is occupied. "
+                    f"Session '{conflicting_session.astronomy_show.title}' runs from "
+                    f"{existing_start.strftime('%H:%M')} to {existing_end_with_break.strftime('%H:%M')} "
+                    f"(including a 30-minute break)."
+                )
+            })
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+
         return super().save(*args, **kwargs)
 
     def __str__(self):

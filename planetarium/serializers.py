@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from planetarium.models import ShowTheme, AstronomyShow, PlanetariumDome
+from django.core.exceptions import ValidationError as DjangoValidationError
+from planetarium.models import ShowTheme, AstronomyShow, PlanetariumDome, ShowSession
 
 
 class ShowThemeSerializer(serializers.ModelSerializer):
@@ -70,3 +71,57 @@ class PlanetariumDomeSerializer(serializers.ModelSerializer):
             "dome_size",
         )
         read_only_fields = ("id", "capacity", "dome_size")
+
+
+class ShowSessionSerializer(serializers.ModelSerializer):
+    astronomy_show = serializers.PrimaryKeyRelatedField(
+        queryset=AstronomyShow.objects.all()
+    )
+    planetarium_dome = serializers.PrimaryKeyRelatedField(
+        queryset=PlanetariumDome.objects.all()
+    )
+
+    class Meta:
+        model = ShowSession
+        fields = (
+            "id", "astronomy_show", "planetarium_dome", "show_time", "price"
+        )
+        read_only_fields = ("id",)
+
+    def validate(self, attrs):
+
+        tmp_instance = ShowSession(**attrs)
+
+        if self.instance:
+
+            tmp_instance.pk = self.instance.pk
+
+            for field in self.instance._meta.fields:
+                if field.name not in attrs and not field.primary_key:
+                    old_value = getattr(self.instance, field.name)
+                    setattr(tmp_instance, field.name, old_value)
+
+        try:
+            tmp_instance.full_clean()
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.message_dict)
+
+        return attrs
+
+
+class ShowSessionListSerializer(ShowSessionSerializer):
+    astronomy_show = serializers.SlugRelatedField(
+        many=False, read_only=True, slug_field="title"
+    )
+    planetarium_dome = serializers.SlugRelatedField(
+        many=False, read_only=True, slug_field="name"
+    )
+    price = serializers.SerializerMethodField()
+
+    def get_price(self, obj) -> str:
+        return f"${obj.price}"
+
+
+class ShowSessionDetailSerializer(ShowSessionListSerializer):
+    astronomy_show = AstronomyShowListSerializer(many=False, read_only=True)
+    planetarium_dome = PlanetariumDomeSerializer(many=False, read_only=True)
