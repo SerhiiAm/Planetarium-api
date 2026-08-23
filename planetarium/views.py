@@ -1,7 +1,8 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
-from planetarium.models import ShowTheme, AstronomyShow, PlanetariumDome, ShowSession
+from planetarium.models import ShowTheme, AstronomyShow, PlanetariumDome, ShowSession, Reservation
 from rest_framework.response import Response
+from django.db.models import Count, F
 from rest_framework.decorators import action
 from planetarium.serializers import (
     AstronomyShowDetailSerializer,
@@ -13,7 +14,9 @@ from planetarium.serializers import (
     PlanetariumDomeSerializer,
     ShowSessionListSerializer,
     ShowSessionDetailSerializer,
-    ShowSessionSerializer
+    ShowSessionSerializer,
+    ReservationSerializer,
+    ReservationListSerializer,
 )
 
 
@@ -86,19 +89,56 @@ class PlanetariumViewSet(ModelViewSet):
 
 
 class ShowSessionViewSet(ModelViewSet):
-    queryset = ShowSession.objects.all()
+    queryset = ShowSession.objects.all().order_by("id")
 
     def get_serializer_class(self):
         if self.action == "list":
             return ShowSessionListSerializer
-
         if self.action == "retrieve":
             return ShowSessionDetailSerializer
-
         return ShowSessionSerializer
 
     def get_queryset(self):
-        queryset = self.queryset
+        queryset = super().get_queryset()
+
         if self.action in ("list", "retrieve"):
-            queryset = queryset.select_related("astronomy_show", "planetarium_dome")
+            queryset = (
+                queryset
+                .select_related("astronomy_show", "planetarium_dome")
+                .annotate(
+                    tickets_available=(
+                        F("planetarium_dome__rows") * F("planetarium_dome__seats_in_row")
+                    ) - Count("tickets")
+                )
+            )
+
+        if self.action == "retrieve":
+            queryset = queryset.prefetch_related("tickets")
+
+        return queryset.order_by("id")
+
+
+class ReservationViewSet(ModelViewSet):
+    queryset = Reservation.objects.all().order_by("id")
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(user=self.request.user)
+
+        if self.action in ("list", "retrieve"):
+            queryset = queryset.prefetch_related(
+                "tickets__show_session__astronomy_show",
+                "tickets__show_session__planetarium_dome"
+            )
+
         return queryset
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return ReservationListSerializer
+        return ReservationSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
