@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.core.exceptions import ValidationError as DjangoValidationError
 from planetarium.models import ShowTheme, AstronomyShow, PlanetariumDome, ShowSession
 
 
@@ -89,22 +88,23 @@ class ShowSessionSerializer(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
     def validate(self, attrs):
+        show_time = attrs.get(
+            "show_time", getattr(self.instance, "show_time", None)
+        )
+        astronomy_show = attrs.get(
+            "astronomy_show", getattr(self.instance, "astronomy_show", None)
+        )
+        planetarium_dome = attrs.get(
+            "planetarium_dome", getattr(self.instance, "planetarium_dome", None)
+        )
 
-        tmp_instance = ShowSession(**attrs)
-
-        if self.instance:
-
-            tmp_instance.pk = self.instance.pk
-
-            for field in self.instance._meta.fields:
-                if field.name not in attrs and not field.primary_key:
-                    old_value = getattr(self.instance, field.name)
-                    setattr(tmp_instance, field.name, old_value)
-
-        try:
-            tmp_instance.full_clean()
-        except DjangoValidationError as error:
-            raise serializers.ValidationError(error.message_dict)
+        ShowSession.validate_show_session(
+            show_time=show_time,
+            astronomy_show=astronomy_show,
+            planetarium_dome=planetarium_dome,
+            error_to_raise=serializers.ValidationError,
+            session_pk=self.instance.pk if self.instance else None,
+        )
 
         return attrs
 

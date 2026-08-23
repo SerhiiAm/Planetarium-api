@@ -9,6 +9,7 @@ from decimal import Decimal
 from planetarium_service import settings
 from django.db.models import DateTimeField, DurationField, ExpressionWrapper, F
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
 
 
 class ShowTheme(models.Model):
@@ -126,19 +127,25 @@ class ShowSession(models.Model):
             models.Index(fields=["astronomy_show", "show_time"]),
         ]
 
-    def clean(self):
-        super().clean()
-
-        if not self.show_time or not self.astronomy_show or not self.planetarium_dome:
+    @staticmethod
+    def validate_show_session(
+            show_time, astronomy_show, planetarium_dome, error_to_raise, session_pk=None
+    ):
+        if not show_time or not astronomy_show or not planetarium_dome:
             return
 
+        current_start = show_time
+        if timezone.is_naive(current_start):
+            current_start = timezone.make_aware(
+                current_start, timezone.get_current_timezone()
+            )
+
         break_duration = timedelta(minutes=30)
-        show_duration = timedelta(minutes=self.astronomy_show.duration)
-        current_start = self.show_time
+        show_duration = timedelta(minutes=astronomy_show.duration)
         current_end_with_break = current_start + show_duration + break_duration
 
         overlapping_sessions = ShowSession.objects.filter(
-            planetarium_dome=self.planetarium_dome
+            planetarium_dome=planetarium_dome
         ).annotate(
             show_duration_interval=ExpressionWrapper(
                 F("astronomy_show__duration") * timedelta(minutes=1),
@@ -153,24 +160,37 @@ class ShowSession(models.Model):
             calculated_end_with_break__gt=current_start
         ).select_related("astronomy_show")
 
-        if self.pk:
-            overlapping_sessions = overlapping_sessions.exclude(pk=self.pk)
+        if session_pk:
+            overlapping_sessions = overlapping_sessions.exclude(pk=session_pk)
 
         conflicting_session = overlapping_sessions.first()
         if conflicting_session:
-            existing_start = conflicting_session.show_time
-            existing_end_with_break = getattr(conflicting_session, "calculated_end_with_break")
-            raise DjangoValidationError({
+            existing_start = timezone.localtime(conflicting_session.show_time)
+            existing_end_with_break = timezone.localtime(
+                getattr(conflicting_session, "calculated_end_with_break")
+            )
+
+            raise error_to_raise({
                 "show_time": (
-                    f"Dome '{self.planetarium_dome.name}' is occupied. "
+                    f"Dome '{planetarium_dome.name}' is occupied. "
                     f"Session '{conflicting_session.astronomy_show.title}' runs from "
                     f"{existing_start.strftime('%H:%M')} to {existing_end_with_break.strftime('%H:%M')} "
                     f"(including a 30-minute break)."
                 )
             })
 
-    def save(self, *args, **kwargs):
+    def clean(self):
+        super().clean()
+        ShowSession.validate_show_session(
+            show_time=self.show_time,
+            astronomy_show=self.astronomy_show,
+            planetarium_dome=self.planetarium_dome,
+            error_to_raise=DjangoValidationError,
+            session_pk=self.pk,
+        )
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
         return super().save(*args, **kwargs)
 
     def __str__(self):
