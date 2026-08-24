@@ -3,6 +3,7 @@ from rest_framework import status
 from planetarium.models import ShowTheme, AstronomyShow, PlanetariumDome, ShowSession, Reservation
 from rest_framework.response import Response
 from django.db.models import Count, F
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.decorators import action
 from planetarium.serializers import (
     AstronomyShowDetailSerializer,
@@ -74,6 +75,7 @@ class AstronomyShowViewSet(ModelViewSet):
         methods=["POST"],
         detail=True,
         url_path="upload-image",
+        permission_classes=[IsAdminUser],
     )
     def upload_image(self, request, pk=None):
         astronomy_show = self.get_object()
@@ -120,6 +122,7 @@ class ShowSessionViewSet(ModelViewSet):
 
 class ReservationViewSet(ModelViewSet):
     queryset = Reservation.objects.all().order_by("id")
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = super().get_queryset()
