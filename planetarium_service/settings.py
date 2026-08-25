@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import sys
 import os
 from pathlib import Path
 from datetime import timedelta
@@ -131,8 +132,9 @@ STATIC_ROOT = BASE_DIR / "files" / "static"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "files" / "media"
 
+IS_RUNNING_TESTS = "test" in sys.argv
 DEBUG_TOOLBAR_CONFIG = {
-    "SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG,
+    "SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG and not IS_RUNNING_TESTS,
     "IS_RUNNING_TESTS": False,
 }
 
