@@ -3,6 +3,7 @@ from rest_framework import status
 from planetarium.models import ShowTheme, AstronomyShow, PlanetariumDome, ShowSession, Reservation
 from rest_framework.response import Response
 from django.db.models import Count, F
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.decorators import action
 from planetarium.serializers import (
@@ -83,6 +84,24 @@ class AstronomyShowViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "description_themes",
+                type=str,
+                description="Filter by theme id (ex. ?description_themes=2,3)",
+            ),
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="Filter by title (case-insensitive substring match, ex. ?title=space)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Get list of astronomy shows"""
+        return super().list(request, *args, **kwargs)
 
 
 class PlanetariumViewSet(ModelViewSet):
