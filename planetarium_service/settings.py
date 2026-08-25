@@ -21,7 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-rqan0yedg5+)vwvxup7t&d8t9asj8%=ht)kjrpm+dm&(&nw__+")
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY", "django-insecure-rqan0yedg5+)vwvxup7t&d8t9asj8%=ht)kjrpm+dm&(&nw__+"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -39,10 +41,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
     "debug_toolbar",
     "planetarium",
     "rest_framework",
-    "user"
+    "user",
 ]
 
 MIDDLEWARE = [
@@ -133,13 +136,11 @@ DEBUG_TOOLBAR_CONFIG = {
 }
 
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": [
-        "planetarium.permissions.IsAdminOrReadOnly"
-    ],
-
+    "DEFAULT_PERMISSION_CLASSES": ["planetarium.permissions.IsAdminOrReadOnly"],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
@@ -148,9 +149,21 @@ REST_FRAMEWORK = {
         "anon": "100/day",
         "user": "1000/day",
     },
-
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 5,
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Planetarium API",
+    "DESCRIPTION": "Order tickets for Planetarium shows",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "defaultModelRendering": "model",
+        "defaultModelsExpandDepth": 2,
+        "defaultModelExpandDepth": 2,
+    },
 }
 
 SIMPLE_JWT = {
