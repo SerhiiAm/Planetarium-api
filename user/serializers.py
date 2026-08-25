@@ -63,8 +63,22 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 
                 active_user_tokens = OutstandingToken.objects.filter(user_id=user_id)
 
-                for token in active_user_tokens:
-                    BlacklistedToken.objects.get_or_create(token=token)
+                existing_blacklisted_ids = set(
+                    BlacklistedToken.objects.filter(token__user_id=user_id)
+                    .values_list("token_id", flat=True)
+                )
+
+                tokens_to_blacklist = [
+                    BlacklistedToken(token=t)
+                    for t in active_user_tokens
+                    if t.id not in existing_blacklisted_ids
+                ]
+
+                if tokens_to_blacklist:
+                    BlacklistedToken.objects.bulk_create(
+                        tokens_to_blacklist,
+                        ignore_conflicts=True
+                    )
 
             raise InvalidToken(
                 "Reuse detected! All sessions revoked. Please login again."
