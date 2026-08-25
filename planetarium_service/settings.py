@@ -133,6 +133,7 @@ MEDIA_ROOT = BASE_DIR / "files" / "media"
 
 DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG,
+    "IS_RUNNING_TESTS": False,
 }
 
 REST_FRAMEWORK = {
