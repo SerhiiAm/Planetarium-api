@@ -18,7 +18,10 @@ class AstronomyShowSerializerTests(TestCase):
         self.show.description_themes.add(self.theme)
 
     def test_astronomy_show_deserialization_valid_data(self):
-        """Test deserialization and creation of AstronomyShow with valid PrimaryKeyRelatedField themes."""
+        """
+        Test deserialization and creation of AstronomyShow with valid
+        PrimaryKeyRelatedField themes.
+        """
         payload = {
             "title": "James Webb",
             "description": "New cosmos images",

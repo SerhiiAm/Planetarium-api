@@ -15,7 +15,10 @@ class PlanetariumDomeModelTests(TestCase):
         self.assertEqual(dome.dome_size, "small")
 
     def test_dome_rows_validation_error(self):
-        """Test that setting rows outside the allowed range [7, 20] raises ValidationError."""
+        """
+        Test that setting rows outside the allowed range [7, 20]
+        raises ValidationError.
+        """
 
         dome = PlanetariumDome(name="Bad Dome", rows=5, seats_in_row=10)
         with self.assertRaises(ValidationError):

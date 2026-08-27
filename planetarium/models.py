@@ -81,11 +81,15 @@ class PlanetariumDome(models.Model):
 
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(rows__gte=7) & models.Q(rows__lte=20),
+                condition=(
+                        models.Q(rows__gte=7) & models.Q(rows__lte=20)
+                ),
                 name="planetarium_dome_rows_range",
             ),
             models.CheckConstraint(
-                condition=models.Q(seats_in_row__gte=7) & models.Q(seats_in_row__lte=15),
+                condition=(
+                        models.Q(seats_in_row__gte=7) & models.Q(seats_in_row__lte=15)
+                ),
                 name="planetarium_dome_seats_in_row_range",
             ),
         ]
@@ -174,7 +178,8 @@ class ShowSession(models.Model):
                 "show_time": (
                     f"Dome '{planetarium_dome.name}' is occupied. "
                     f"Session '{conflicting_session.astronomy_show.title}' runs from "
-                    f"{existing_start.strftime('%H:%M')} to {existing_end_with_break.strftime('%H:%M')} "
+                    f"{existing_start.strftime('%H:%M')} to "
+                    f"{existing_end_with_break.strftime('%H:%M')} "
                     f"(including a 30-minute break)."
                 )
             })
@@ -194,7 +199,10 @@ class ShowSession(models.Model):
         return super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.astronomy_show.title} - {self.show_time.strftime('%Y-%m-%d %H:%M')} (${self.price})"
+        return (
+            f"{self.astronomy_show.title} - "
+            f"{self.show_time.strftime('%Y-%m-%d %H:%M')} (${self.price})"
+        )
 
 
 class Reservation(models.Model):
@@ -251,12 +259,22 @@ class Ticket(models.Model):
     ):
         errors = {}
 
-        if row is not None and not (1 <= row <= planetarium_dome.rows):
-            errors["row"] = f"Row number must be in range [1, {planetarium_dome.rows}], not {row}."
+        if (
+                row is not None
+                and not (1 <= row <= planetarium_dome.rows)
+        ):
+            errors["row"] = (
+                f"Row number must be in range [1, {planetarium_dome.rows}], not {row}."
+            )
 
-        if seat_in_row is not None and not (1 <= seat_in_row <= planetarium_dome.seats_in_row):
-            errors[
-                "seat_in_row"] = f"Seat number must be in range [1, {planetarium_dome.seats_in_row}], not {seat_in_row}."
+        if (
+                seat_in_row is not None
+                and not (1 <= seat_in_row <= planetarium_dome.seats_in_row)
+        ):
+            errors["seat_in_row"] = (
+                f"Seat number must be in range "
+                f"[1, {planetarium_dome.seats_in_row}], not {seat_in_row}."
+            )
 
         if errors:
             raise error_to_raise(errors)

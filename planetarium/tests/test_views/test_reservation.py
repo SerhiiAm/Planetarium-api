@@ -66,7 +66,10 @@ class ReservationApiTests(TestCase):
         self.assertEqual(len(res.data["results"]), 2)
 
     def test_create_reservation_assigns_authenticated_user(self):
-        """Test creating reservation attaches currently authenticated user automatically."""
+        """
+        Test creating reservation attaches currently authenticated user
+        automatically.
+        """
         self.client.force_authenticate(self.user)
         payload = {
             "tickets": [{"show_session": self.session.id, "row": 2, "seat_in_row": 3}]

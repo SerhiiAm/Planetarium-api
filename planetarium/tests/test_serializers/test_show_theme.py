@@ -19,7 +19,10 @@ class ShowThemeSerializerTests(TestCase):
         self.assertEqual(serializer.data, expected_data)
 
     def test_show_theme_detail_serialization(self):
-        """Test that ShowThemeDetailSerializer includes related astronomy show titles as slugs."""
+        """
+        Test that ShowThemeDetailSerializer includes related astronomy show
+        titles as slugs.
+        """
         show = AstronomyShow.objects.create(
             title="Apollo 11", description="Moon landing", duration=60
         )

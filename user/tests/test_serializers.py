@@ -24,9 +24,11 @@ class CustomTokenRefreshSerializerTests(TestCase):
     def test_reuse_detected_revokes_all_user_sessions(self):
         """
         Scenario 1: R1 Token Theft Attack.
-        A hacker steals R1 and refreshes it (R1 is added to the blacklist, and the hacker receives R2).
-        When the victim attempts to use their R1, the system detects a token reuse attempt and
-        revokes absolutely all active tokens for that user (including session_2).
+        A hacker steals R1 and refreshes it (R1 is added to the blacklist,
+        and the hacker receives R2).
+        When the victim attempts to use their R1, the system detects a token
+        reuse attempt and revokes absolutely all active tokens for that user
+        (including session_2).
         """
         serializer = CustomTokenRefreshSerializer()
 
@@ -34,7 +36,9 @@ class CustomTokenRefreshSerializerTests(TestCase):
         self.assertIn("access", data)
 
         self.assertTrue(
-            BlacklistedToken.objects.filter(token__token=str(self.refresh_session_1)).exists()
+            BlacklistedToken.objects.filter(
+                token__token=str(self.refresh_session_1)
+            ).exists()
         )
 
         with self.assertRaises(InvalidToken) as cm:
@@ -43,7 +47,9 @@ class CustomTokenRefreshSerializerTests(TestCase):
         self.assertIn("Reuse detected!", str(cm.exception))
 
         total_user_tokens = OutstandingToken.objects.filter(user=self.user).count()
-        blacklisted_user_tokens = BlacklistedToken.objects.filter(token__user=self.user).count()
+        blacklisted_user_tokens = BlacklistedToken.objects.filter(
+            token__user=self.user
+        ).count()
 
         self.assertEqual(total_user_tokens, 3)
         self.assertEqual(blacklisted_user_tokens, 3)
@@ -52,8 +58,8 @@ class CustomTokenRefreshSerializerTests(TestCase):
         """
         Scenario 2: Token Race Condition (Parallel Access).
         Both parties (the Victim and the Hacker) possess an instance of R1.
-        The first successful request validates R1. The second request encounters an error and revokes
-        all active sessions.
+        The first successful request validates R1. The second request encounters
+        an error and revokes all active sessions.
         """
         serializer = CustomTokenRefreshSerializer()
         shared_r1 = str(self.refresh_session_1)
@@ -69,8 +75,8 @@ class CustomTokenRefreshSerializerTests(TestCase):
     def test_bulk_create_ignores_already_blacklisted_tokens(self):
         """
         Scenario 3: Testing N+1 Optimization and bulk_create.
-        Ensuring that a cascade revocation does not trigger an IntegrityError for tokens that are
-        ALREADY blacklisted.
+        Ensuring that a cascade revocation does not trigger an IntegrityError
+        for tokens that are ALREADY blacklisted.
         """
         serializer = CustomTokenRefreshSerializer()
 
@@ -111,7 +117,11 @@ class UserSerializerTests(TestCase):
         user = User.objects.create_user(**self.user_data)
         new_password = "newsecurepassword123"
 
-        serializer = UserSerializer(instance=user, data={"password": new_password}, partial=True)
+        serializer = UserSerializer(
+            instance=user,
+            data={"password": new_password},
+            partial=True,
+        )
         self.assertTrue(serializer.is_valid())
         updated_user = serializer.save()
 

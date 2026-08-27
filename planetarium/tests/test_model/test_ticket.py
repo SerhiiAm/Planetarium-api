@@ -32,7 +32,10 @@ class TicketValidationTests(TestCase):
         )
 
     def test_ticket_seat_out_of_range_raises_error(self):
-        """Test that selecting a seat number outside the dome's limit raises ValidationError."""
+        """
+        Test that selecting a seat number outside the dome's limit
+        raises ValidationError.
+        """
         ticket = Ticket(
             row=5,
             seat_in_row=15,
@@ -47,7 +50,10 @@ class TicketValidationTests(TestCase):
             )
 
     def test_duplicate_ticket_seat_and_row_raises_integrity_error(self):
-        """Test that buying the exact same seat for the same session raises ValidationError."""
+        """
+        Test that buying the exact same seat for the same session
+        raises ValidationError.
+        """
         reservation = Reservation.objects.create(user=self.user)
         Ticket.objects.create(
             row=1, seat_in_row=1, show_session=self.session, reservation=reservation

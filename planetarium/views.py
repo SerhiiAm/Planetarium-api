@@ -1,6 +1,12 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
-from planetarium.models import ShowTheme, AstronomyShow, PlanetariumDome, ShowSession, Reservation
+from planetarium.models import (
+    AstronomyShow,
+    PlanetariumDome,
+    Reservation,
+    ShowSession,
+    ShowTheme,
+)
 from rest_framework.response import Response
 from django.db.models import Count, F
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -95,7 +101,10 @@ class AstronomyShowViewSet(ModelViewSet):
             OpenApiParameter(
                 "title",
                 type=str,
-                description="Filter by title (case-insensitive substring match, ex. ?title=space)",
+                description=(
+                        "Filter by title (case-insensitive substring match, "
+                        "ex. ?title=space)"
+                ),
             ),
         ]
     )
@@ -128,8 +137,10 @@ class ShowSessionViewSet(ModelViewSet):
                 .select_related("astronomy_show", "planetarium_dome")
                 .annotate(
                     tickets_available=(
-                        F("planetarium_dome__rows") * F("planetarium_dome__seats_in_row")
-                    ) - Count("tickets")
+                        F("planetarium_dome__rows")
+                        * F("planetarium_dome__seats_in_row")
+                        - Count("tickets", distinct=True)
+                    )
                 )
             )
 

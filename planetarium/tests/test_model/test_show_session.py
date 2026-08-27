@@ -18,7 +18,10 @@ class ShowSessionValidationTests(TestCase):
         self.now = timezone.now()
 
     def test_overlapping_session_raises_error(self):
-        """Test that creating a session overlapping with an existing show and its 30-minute break raises ValidationError."""
+        """
+        Test that creating a session overlapping with an existing show
+        and its 30-minute break raises ValidationError.
+        """
         ShowSession.objects.create(
             astronomy_show=self.show,
             planetarium_dome=self.dome,
@@ -35,7 +38,10 @@ class ShowSessionValidationTests(TestCase):
             overlapping_session.full_clean()
 
     def test_exact_same_show_time_raises_integrity_error(self):
-        """Test that creating a session at the exact same start time in the same dome raises ValidationError."""
+        """
+        Test that creating a session at the exact same start time in the same
+        dome raises ValidationError.
+        """
         ShowSession.objects.create(
             astronomy_show=self.show, planetarium_dome=self.dome, show_time=self.now
         )

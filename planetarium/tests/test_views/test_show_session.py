@@ -41,7 +41,10 @@ class ShowSessionApiTests(TestCase):
         )
 
     def test_show_session_tickets_available_calculation(self):
-        """Test that tickets_available is calculated correctly for authenticated user."""
+        """
+        Test that tickets_available is calculated correctly for authenticated
+        user.
+        """
         reservation = Reservation.objects.create(user=self.user)
         Ticket.objects.create(
             show_session=self.session, reservation=reservation, row=1, seat_in_row=1

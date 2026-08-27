@@ -48,7 +48,10 @@ class ReservationAndTicketSerializerTests(TestCase):
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
     def test_reservation_creation_with_nested_tickets(self):
-        """Test creation of Reservation along with nested Tickets in atomic transaction."""
+        """
+        Test creation of Reservation along with nested Tickets in atomic
+        transaction.
+        """
         payload = {
             "tickets": [
                 {"show_session": self.session.id, "row": 1, "seat_in_row": 1},

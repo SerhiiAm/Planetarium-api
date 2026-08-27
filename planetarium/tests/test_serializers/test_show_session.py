@@ -17,7 +17,10 @@ class ShowSessionSerializerTests(TestCase):
         self.show_time = timezone.now()
 
     def test_show_session_validation_triggers_model_clean(self):
-        """Test that custom validation in ShowSessionSerializer delegates to model's validate_show_session."""
+        """
+        Test that custom validation in ShowSessionSerializer delegates
+        to model's validate_show_session.
+        """
         payload = {
             "astronomy_show": self.show.id,
             "planetarium_dome": self.dome.id,
@@ -28,7 +31,10 @@ class ShowSessionSerializerTests(TestCase):
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
     def test_show_session_list_serializer_price_formatting(self):
-        """Test that ShowSessionListSerializer properly formats price with dollar sign."""
+        """
+        Test that ShowSessionListSerializer properly formats price with
+        dollar sign.
+        """
         session = ShowSession.objects.create(
             astronomy_show=self.show,
             planetarium_dome=self.dome,

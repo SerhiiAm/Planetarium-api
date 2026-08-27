@@ -115,7 +115,10 @@ class AuthenticatedAstronomyShowApiTests(TestCase):
 
 
 class AdminAstronomyShowApiTests(TestCase):
-    """Test suite for admin user permissions and management operations in AstronomyShow API."""
+    """
+    Test suite for admin user permissions and management operations
+    in AstronomyShow API.
+    """
 
     def setUp(self):
         self.client = APIClient()
