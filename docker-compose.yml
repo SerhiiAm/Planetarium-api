@@ -1,3 +1,4 @@
+name: planetarium-api
 services:
   app:
     build:
